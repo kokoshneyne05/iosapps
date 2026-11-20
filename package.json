@@ -1,0 +1,8 @@
+{
+  "name": "github-releases-ota",
+  "private": true,
+  "dependencies": {
+    "bplist-parser": "^0.3.2",
+    "plist": "^3.1.0"
+  }
+}
