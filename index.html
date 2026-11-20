@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IPA Установщик</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #111; color: #fff; margin: 0; padding: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    h1 { font-size: 22px; margin: 0; }
+    .refresh { background: #2c2c2e; color: #0a84ff; border: none; border-radius: 10px; padding: 8px 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .card { background: #1c1c1e; border-radius: 14px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .info { overflow: hidden; }
+    .name { font-weight: 600; font-size: 16px; word-break: break-word; }
+    .meta { color: #8e8e93; font-size: 13px; margin-top: 4px; word-break: break-all; }
+    .install-btn { background: #0a84ff; color: #fff; border: none; border-radius: 10px; padding: 10px 16px; font-size: 15px; font-weight: 600; cursor: pointer; flex-shrink: 0; }
+    .install-btn:active { opacity: 0.7; }
+    .status { color: #8e8e93; background: #1c1c1e; padding: 16px; border-radius: 14px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Мои IPA</h1>
+    <button class="refresh" onclick="loadApps()">Обновить</button>
+  </div>
+  <div id="list" class="status">Загрузка релизов...</div>
+
+  <script>
+    let currentApps = [];
+
+    function installApp(index) {
+      const app = currentApps[index];
+      if (!app) return;
+      const manifestUrl = `${window.location.origin}/api/manifest?url=${encodeURIComponent(app.url)}&id=${encodeURIComponent(app.bundleId)}&title=${encodeURIComponent(app.title)}&ver=${encodeURIComponent(app.version)}`;
+      window.location.href = `itms-services://?action=download-manifest&url=${encodeURIComponent(manifestUrl)}`;
+    }
+
+    async function loadApps() {
+      const listEl = document.getElementById('list');
+      listEl.className = 'status';
+      listEl.textContent = 'Загрузка релизов...';
+
+      try {
+        const res = await fetch('/api/apps?t=' + Date.now());
+        const data = await res.json();
+
+        if (data.error) {
+          listEl.textContent = data.error;
+          return;
+        }
+
+        currentApps = data;
+        if (!currentApps.length) {
+          listEl.textContent = 'В GitHub Releases пока нет загруженных .ipa файлов.';
+          return;
+        }
+
+        listEl.className = '';
+        listEl.innerHTML = currentApps.map((app, i) => `
+          <div class="card">
+            <div class="info">
+              <div class="name">${app.title} <span style="color:#8e8e93;font-weight:400;">v${app.version}</span></div>
+              <div class="meta">${app.sizeMb} МБ • ${app.bundleId}</div>
+            </div>
+            <button class="install-btn" onclick="installApp(${i})">Установить</button>
+          </div>
+        `).join('');
+      } catch (e) {
+        listEl.textContent = 'Ошибка соединения с сервером.';
+      }
+    }
+
+    loadApps();
+  </script>
+</body>
+</html>
