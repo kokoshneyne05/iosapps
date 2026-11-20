@@ -1,5 +1,5 @@
 module.exports = (req, res) => {
-  const { url, id = 'com.custom.ota.app', title = 'App', ver = '1.0' } = req.query;
+  const { url, icon, id = 'com.custom.ota.app', title = 'App', ver = '1.0' } = req.query;
 
   if (!url) {
     return res.status(400).send('Missing url parameter');
@@ -11,6 +11,22 @@ module.exports = (req, res) => {
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+
+  const iconAssets = icon
+    ? `
+        <dict>
+          <key>kind</key>
+          <string>display-image</string>
+          <key>url</key>
+          <string>${escapeXml(icon)}</string>
+        </dict>
+        <dict>
+          <key>kind</key>
+          <string>full-size-image</string>
+          <key>url</key>
+          <string>${escapeXml(icon)}</string>
+        </dict>`
+    : '';
 
   const manifest = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -26,7 +42,7 @@ module.exports = (req, res) => {
           <string>software-package</string>
           <key>url</key>
           <string>${escapeXml(url)}</string>
-        </dict>
+        </dict>${iconAssets}
       </array>
       <key>metadata</key>
       <dict>
